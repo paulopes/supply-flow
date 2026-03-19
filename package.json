@@ -1,0 +1,44 @@
+{
+  "name": "supply-flow",
+  "version": "1.1.0",
+  "description": "Generate self-contained, interactive HTML (or SVG) diagrams that map the geographic flow of products through a supply chain.",
+  "bin": {
+    "supply-flow": "./skill/supply-flow.js",
+    "mcp-supply-flow": "./install-mcp.js"
+  },
+  "scripts": {
+    "build": "cross-env INPUT=mcp-app.html vite build",
+    "start": "concurrently --raw \"cross-env NODE_ENV=development INPUT=mcp-app.html vite build --watch\" \"node --watch main.mjs\"",
+    "start:stdio": "node main.mjs --stdio",
+    "install-mcp": "node install-mcp.js",
+    "install-mcp:claude-code": "node install-mcp.js --client=claude-code",
+    "install-mcp:claude-desktop": "node install-mcp.js --client=claude-desktop",
+    "install-mcp:vscode": "node install-mcp.js --client=vscode",
+    "install-mcp:cursor": "node install-mcp.js --client=cursor",
+    "install-mcp:windsurf": "node install-mcp.js --client=windsurf",
+    "install-mcp:antigravity": "node install-mcp.js --client=antigravity",
+    "install-skill": "node install-skill.js"
+  },
+  "keywords": [
+    "mermaid",
+    "html",
+    "diagram",
+    "supply-flow",
+    "mcp",
+    "mcp-app"
+  ],
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.24.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "vite": "^6.0.0",
+    "vite-plugin-singlefile": "^2.3.0"
+  }
+}

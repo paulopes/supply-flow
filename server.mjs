@@ -1,0 +1,144 @@
+import {
+  registerAppResource,
+  registerAppTool,
+  RESOURCE_MIME_TYPE,
+} from "@modelcontextprotocol/ext-apps/server";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { z } from "zod";
+
+// Resolve __dirname equivalent for ESM
+const __dirname = import.meta.dirname;
+
+// Locate the dist dir — works from both source (server.mjs) and build output
+const DIST_DIR = path.join(__dirname, "dist");
+const SKILL_PATH = path.join(__dirname, "skill", "supply-flow-SKILL.md");
+
+// Import the supply-flow generator (CJS module)
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
+const { generateDiagram } = require("./skill/supply-flow.js");
+
+/**
+ * Creates a new MCP server instance with the supply-flow tool and UI resource.
+ */
+export function createServer() {
+  const server = new McpServer({
+    name: "supply-flow",
+    version: "1.0.0",
+  });
+
+  const resourceUri = "ui://supply-flow/mcp-app.html";
+  const skillGuideUri = "docs://supply-flow/skill-guide";
+
+  // ── Tool: generate-supply-flow-diagram ──────────────────────────────────────────────
+  //
+  // Accepts a full supply-flow JSON config object and returns the generated
+  // self-contained HTML diagram.  When called from an MCP Apps-capable host
+  // the UI resource is also rendered inline.
+
+  registerAppTool(
+    server,
+    "generate-supply-flow-diagram",
+    {
+      title: "Generate CFR Diagram",
+      description:
+        "Generate an interactive HTML supply flow diagram from a supply-flow JSON config. " +
+        "Returns a self-contained HTML document with clickable CFR reference tooltips.\n\n" +
+        "IMPORTANT: Before calling this tool, read the skill guide resource at " +
+        "docs://supply-flow/skill-guide for full JSON schema details, layout selection " +
+        "guidance, quality checklists, and examples.\n\n" +
+        "Layouts (set via \"layout\" field):\n" +
+        "- events: Vertical spine with era sections and clickable event dots (needs \"sections\")\n" +
+        "- timeline: Gantt-style bars on a shared year axis (needs \"periods\")\n" +
+        "- lifecycle: SVG swim-lane grid — lanes as rows, stages as columns (needs \"lanes\", \"stages\")\n" +
+        "- lifecycle-t: Transposed swim-lane grid — lanes as columns, stages as rows (needs \"lanes\", \"stages\")\n" +
+        "- flowchart: Mermaid flowchart TD with clickable nodes (needs \"nodeMap\" + \"mermaid\")\n" +
+        "- sequence: Mermaid sequenceDiagram with phase cards (needs \"phases\" + \"mermaid\")\n" +
+        "- state: Mermaid stateDiagram-v2 with clickable states (needs \"stateMap\" + \"mermaid\")\n" +
+        "- gantt: Mermaid gantt chart with clickable tasks (needs \"taskMap\" + \"mermaid\")\n\n" +
+        "Required fields (all layouts): title, borderColor, layout, defined.\n" +
+        "The \"defined\" object maps CFR section keys to [shortTitle, quotedText] arrays.",
+      inputSchema: z.object({
+        config: z
+          .record(z.any())
+          .describe(
+            "The supply-flow JSON config object. Required fields: title (string), " +
+            "borderColor (hex string), layout (string), defined (object mapping CFR " +
+            "section keys to [shortTitle, quotedText] arrays). Additional fields " +
+            "depend on layout — see the skill guide resource for full schema."
+          ),
+        configDir: z
+          .string()
+          .optional()
+          .describe(
+            "Directory for resolving relative mermaidFile/logo paths. Defaults to cwd."
+          ),
+      }),
+      _meta: { ui: { resourceUri } },
+    },
+    async ({ config, configDir }) => {
+      try {
+        const html = generateDiagram(config, configDir || process.cwd());
+        return {
+          content: [{ type: "text", text: html }],
+        };
+      } catch (err) {
+        return {
+          content: [{ type: "text", text: `Error: ${err.message}` }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // ── Resource: skill guide ────────────────────────────────────────────────
+  //
+  // Exposes the supply-flow SKILL.md as a readable MCP resource so that AI
+  // clients can fetch full layout schemas, examples, and quality checklists
+  // before calling generate-supply-flow-diagram.
+
+  server.resource(
+    "skill-guide",
+    skillGuideUri,
+    {
+      title: "supply-flow Skill Guide",
+      description:
+        "Complete documentation for the supply-flow diagram generator: " +
+        "JSON schemas for all 8 layouts, field references, canonical " +
+        "program colors, quality checklists, and worked examples. " +
+        "Read this before calling generate-supply-flow-diagram.",
+      mimeType: "text/markdown",
+    },
+    async (uri) => {
+      const text = await fs.readFile(SKILL_PATH, "utf-8");
+      return {
+        contents: [{ uri: uri.toString(), mimeType: "text/markdown", text }],
+      };
+    }
+  );
+
+  // ── UI Resource ─────────────────────────────────────────────────────────
+  //
+  // Returns the bundled MCP App View HTML that renders diagrams inline
+  // in the conversation.
+
+  registerAppResource(
+    server,
+    resourceUri,
+    resourceUri,
+    { mimeType: RESOURCE_MIME_TYPE },
+    async () => {
+      const html = await fs.readFile(
+        path.join(DIST_DIR, "mcp-app.html"),
+        "utf-8"
+      );
+      return {
+        contents: [{ uri: resourceUri, mimeType: RESOURCE_MIME_TYPE, text: html }],
+      };
+    }
+  );
+
+  return server;
+}
