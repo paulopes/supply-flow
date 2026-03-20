@@ -3,3 +3,4 @@ dist/
 *.log
 .vscode/
 .mcp*
+settings.json

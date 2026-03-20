@@ -19,10 +19,9 @@ This makes `supply-flow` and `mcp-supply-flow` available as global commands.
 ```bash
 supply-flow <config.json> [--output <file.html>]
 ```
-Options:
-  - `-o, --output` <file>   Output HTML file (default: derived from config filename)
-  - `-h, --help`            Show usage help
 
+Options:
+  - `-o, --output` <file>   Output HTML file (default: derived from config filename)           Show usage help
 
     > **Note:** If `--output` (or `-o`) is omitted, the output filename is derived from the part number and a scenario letter to separate each potential alternative scenario for the supply flow of a particular produt's part number.
     > **Note 2:** The `output` field in the config.json file controls the format (`"html"` or `"svg"`) and is not controlled by a command line argument.
@@ -116,6 +115,8 @@ npm run install-mcp:vscode
 npm run install-mcp:cursor
 npm run install-mcp:windsurf
 npm run install-mcp:antigravity
+npm run install-mcp:gemini-cli
+npm run install-mcp:gemini-cli-global
 ```
 
 See [INSTALLING-MCP-SERVER-TOOL.md](INSTALLING-MCP-SERVER-TOOL.md) for full details, manual setup steps, config file locations, and instructions for other clients (including Goose).

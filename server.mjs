@@ -42,38 +42,31 @@ export function createServer() {
     server,
     "generate-supply-flow-diagram",
     {
-      title: "Generate CFR Diagram",
+      title: "Generate Supply Flow Diagram",
       description:
-        "Generate an interactive HTML supply flow diagram from a supply-flow JSON config. " +
-        "Returns a self-contained HTML document with clickable CFR reference tooltips.\n\n" +
-        "IMPORTANT: Before calling this tool, read the skill guide resource at " +
-        "docs://supply-flow/skill-guide for full JSON schema details, layout selection " +
-        "guidance, quality checklists, and examples.\n\n" +
-        "Layouts (set via \"layout\" field):\n" +
-        "- events: Vertical spine with era sections and clickable event dots (needs \"sections\")\n" +
-        "- timeline: Gantt-style bars on a shared year axis (needs \"periods\")\n" +
-        "- lifecycle: SVG swim-lane grid — lanes as rows, stages as columns (needs \"lanes\", \"stages\")\n" +
-        "- lifecycle-t: Transposed swim-lane grid — lanes as columns, stages as rows (needs \"lanes\", \"stages\")\n" +
-        "- flowchart: Mermaid flowchart TD with clickable nodes (needs \"nodeMap\" + \"mermaid\")\n" +
-        "- sequence: Mermaid sequenceDiagram with phase cards (needs \"phases\" + \"mermaid\")\n" +
-        "- state: Mermaid stateDiagram-v2 with clickable states (needs \"stateMap\" + \"mermaid\")\n" +
-        "- gantt: Mermaid gantt chart with clickable tasks (needs \"taskMap\" + \"mermaid\")\n\n" +
-        "Required fields (all layouts): title, borderColor, layout, defined.\n" +
-        "The \"defined\" object maps CFR section keys to [shortTitle, quotedText] arrays.",
+        "Generate self-contained, interactive HTML (or SVG) diagrams that map " +
+        "the geographic flow of products through a supply chain. Each node " +
+        "represents a company or facility, and edges represent the flow of " +
+        "products between them. The diagram can be used to visualize and " +
+        "analyze the supply chain, identify potential bottlenecks, and " +
+        "optimize the flow of products.\n\n" +
+        "IMPORTANT: Before calling this tool, call read-supply-flow-skill-guide " +
+        "(or read the resource docs://supply-flow/skill-guide) for full JSON schema " +
+        "details, guidance, potential resources, verification, and examples.\n\n",
       inputSchema: z.object({
         config: z
           .record(z.any())
           .describe(
             "The supply-flow JSON config object. Required fields: title (string), " +
-            "borderColor (hex string), layout (string), defined (object mapping CFR " +
-            "section keys to [shortTitle, quotedText] arrays). Additional fields " +
-            "depend on layout — see the skill guide resource for full schema."
+            "product (object with name, category, and specs keys)." +
+            "nodes (array of objects with id, label, location, role, " +
+            "details, coveredList, coveredNote, and riskAssessment keys)."
           ),
         configDir: z
           .string()
           .optional()
           .describe(
-            "Directory for resolving relative mermaidFile/logo paths. Defaults to cwd."
+            "Directory for resolving relative file paths. Defaults to cwd."
           ),
       }),
       _meta: { ui: { resourceUri } },
@@ -90,6 +83,25 @@ export function createServer() {
           isError: true,
         };
       }
+    }
+  );
+
+
+  // ── Tool: read-skill-guide ──────────────────────────────────────────────
+  //
+  // Returns the full supply-flow SKILL.md as text so that clients which don't
+  // support MCP resources can still fetch the schema documentation.
+
+  server.tool(
+    "read-supply-flow-skill-guide",
+    "Return the full supply-flow skill guide (JSON schemas for all 8 layouts, " +
+    "field references, canonical program colors, quality checklists, and " +
+    "worked examples). Call this before generate-supply-flow-diagram to learn " +
+    "how to structure the config object.",
+    {},
+    async () => {
+      const text = await fs.readFile(SKILL_PATH, "utf-8");
+      return { content: [{ type: "text", text }] };
     }
   );
 

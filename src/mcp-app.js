@@ -24,7 +24,7 @@ function renderDiagram(html) {
           frameEl.style.height = body.scrollHeight + "px";
         };
         resize();
-        // Re-check after Mermaid renders (async)
+        // Re-check after async renders.
         setTimeout(resize, 1000);
         setTimeout(resize, 3000);
       }
