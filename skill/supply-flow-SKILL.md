@@ -4,7 +4,7 @@
 
 `supply-flow.js` generates self-contained, interactive HTML (or SVG) diagrams that map the geographic flow of products through a supply chain. Each node represents a supply chain participant (manufacturer, assembler, distributor, etc.) placed at its real-world coordinates on an Americas-centered equirectangular map. Flows are rendered as curved arrows between nodes.
 
-The tool is designed for **supply chain compliance screening** — particularly FCC Covered List, BIS Entity List, and CSL screening under 47 CFR Part 2 and 47 U.S.C. § 1601. It supports risk assessment popovers, FCC/BIS/CSL links, corporate ownership trees, and multiple scenario generation when manufacturer identity is uncertain.
+The tool is designed for **supply chain compliance investigation and documentation** — particularly FCC Covered List, BIS Entity List, and CSL screening under 47 CFR Part 2 and 47 U.S.C. § 1601. The goal is not to exclude flagged entities but to **include them, research their full corporate ownership and subsidiary structures, and present the findings visually** so that compliance reviewers have a complete, documented picture. It supports risk assessment popovers, FCC/BIS/CSL links, corporate ownership trees with tiered warning highlights, and multiple scenario generation when manufacturer identity is uncertain.
 
 ## Required Files
 
@@ -137,6 +137,8 @@ When any node in a tree has a `highlight` field, the corresponding tab label tur
 - `highlight` — tiered warning paragraphs rendered at the bottom of the card; triggers ⚠ warning on the tree's tab label colored to match the highest-severity finding. Accepts a plain string (renders as info-level green) or an array of `{tier, text}` objects where `tier` is `"state"`, `"fcc"`, `"doc"`, or omitted for info-level.
 
 ### Entity Screening (Three-Tier)
+
+**The purpose of entity screening is documentation, not exclusion.** When screening reveals that an entity appears on the FCC Covered List, the BIS Entity List, or has state ownership ties, the correct response is to **include that entity in the corporate hierarchy tree, research its owners and subsidiaries in depth, and document each finding as a tiered `highlight`** on the relevant tree node. A covered or listed entity is the *starting point* of deeper investigation — trace ownership upward (who owns the listed entity? is the parent state-affiliated?) and trace subsidiaries downward (which controlled entities are also implicated?). The resulting owners and subsidiaries trees, populated with highlight annotations, give compliance reviewers the full picture.
 
 **Every entity in the corporate hierarchy — owners, subsidiaries, and the anchor entity itself — must be screened** against three watchlists, in descending order of severity:
 
@@ -307,6 +309,8 @@ For each entity identified in Step 6, map the full corporate hierarchy:
 Repeat Steps 1–5 against each subsidiary's product catalogs and part number formats.
 
 **After mapping, screen every entity in the tree** (owners, subsidiaries, and the anchor entity) using the three-tier Entity Screening process described in the Corporate Hierarchy Schema section above. Populate the `highlight` field for every positive finding. This step is mandatory — no hierarchy entity should go unscreened.
+
+**When screening finds a listed or flagged entity, do not stop — go deeper.** A positive finding on any entity demands expanded investigation of that entity's owners and subsidiaries. For example, if a manufacturer's parent appears on the BIS Entity List, research *that parent's* ownership chain (who are its owners? is it state-affiliated?) and its subsidiaries (what other companies does it control?). Add every discovered entity to the appropriate tree with its own screening results. The diagram's value lies in presenting the complete, documented chain — not in filtering entities out.
 
 ### Step 8 — Component Sourcing Investigation
 
