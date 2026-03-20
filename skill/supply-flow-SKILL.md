@@ -247,13 +247,48 @@ Extract distinctive sub-strings and search them independently:
 
 These may match product family codes, revision codes, or spec encodings.
 
-### Step 4 — Format Fingerprinting
+### Step 4 — Punctuation Reinsertion (Embedded OEM Part Number Recovery)
+
+Distributor and buyer-assigned part numbers frequently embed a recognized OEM part number with punctuation stripped — hyphens, dots, and slashes removed to fit internal inventory systems. Recovering the original punctuation can instantly identify the product's OEM equivalent and dramatically increase confidence.
+
+**Technique:**
+
+1. **Remove the known prefix/suffix.** Strip the buyer prefix (e.g., `FW0-`, `FM0-`) and any brand suffix (e.g., `PIVIT`, `I` for industrial temp).
+2. **Identify candidate OEM patterns** in the remaining string. Common OEM part number structures include:
+   - Hyphens between product family segments: `DWDM-SFP10G-XX.XX` (Cisco), `AT-3CE12YT-024` (OFS)
+   - Dots in wavelength values: `30.33` = 1530.33nm, `61.41` = 1561.41nm
+   - Slashes in fiber specs: `B1.3/B6A1` (YOFC)
+3. **Re-insert punctuation and search.** Try the most likely OEM format in quotes. For DWDM transceivers, the Cisco format `DWDM-SFP10G-XX.XX` is nearly universal as a compatibility reference.
+
+**Example:**
+
+```
+FW0-DWDMSFP10G3033IPIVIT
+  ↓ strip prefix FW0- and suffix IPIVIT
+DWDMSFP10G3033
+  ↓ insert hyphens at known Cisco segment boundaries
+DWDM-SFP10G-3033
+  ↓ insert dot in wavelength (30.33 → 1530.33nm)
+DWDM-SFP10G-30.33
+  ↓ search → exact Cisco part number match (ITU C59, 80km)
+```
+
+**When this works,** it can upgrade confidence from Tier D to Tier B — the embedded OEM part number confirms the exact product specification even though the manufacturer of this specific unit remains the Chinese ODM, not Cisco.
+
+**Common patterns to try:**
+- DWDM/CWDM optics: `DWDM-SFP10G-XX.XX`, `CWDM-SFP-XXXX`, `SFP-10G-LR`, `QSFP-40G-SR4`
+- Fiber cable: `GYFY(ALL DRY)-nB1.3/B6A1` (YOFC), `024EUC-T4101D20` (Corning)
+- Patch cords: `SC/APC-LC/UPC` connectors embedded as letter codes
+
+**Critical distinction — compatibility reference vs. provenance:** When an embedded OEM part number is recovered (e.g., Cisco `DWDM-SFP10G-30.33` inside a PivIT-branded transceiver), it identifies *what the product is equivalent to*, not *who made it*. Third-party compatible optics distributors like PivIT Global, Approved Networks, ProLabs, and FS.com source from Chinese ODM manufacturers who program the transceiver EEPROM for Cisco/Juniper/Arista compatibility. The OEM (Cisco) is never in the supply chain for these units — they are not resold OEM products. The OEM part number should **not** appear as a node in the supply chain flow diagram. Instead, document it in the product specs field as an equivalence reference. This distinction matters for compliance: the OEM's own sourcing controls do not apply to third-party compatible modules, making manufacturer opacity a higher-severity finding on active equipment.
+
+### Step 5 — Format Fingerprinting
 
 Compare the part number structure against known manufacturer ordering schemas. Use the description to narrow the comparison set. For example, if the description says "loose tube cable," compare against Corning (`024EUC-T4101D20`), AFL (`LE024xC5101N1D`), OFS (`AT-3CE12YT-024`), etc.
 
 A structural mismatch (different prefix, different separator, different segment lengths) rules out that manufacturer even if some characters overlap.
 
-### Step 5 — Distributor / Seller Identification
+### Step 6 — Distributor / Seller Identification
 
 Search for the part number on distributor sites, procurement portals, and e-commerce platforms. Identify who sells the product, then investigate:
 
@@ -261,19 +296,19 @@ Search for the part number on distributor sites, procurement portals, and e-comm
 - Has the distributor acquired any manufacturers recently?
 - Does the distributor's website reference a specific assembly partner?
 
-### Step 6 — Corporate Tree Search & Entity Screening
+### Step 7 — Corporate Tree Search & Entity Screening
 
-For each entity identified in Step 5, map the full corporate hierarchy:
+For each entity identified in Step 6, map the full corporate hierarchy:
 
 - **Parent company** — who owns the distributor or manufacturer? Trace the ownership chain upward to the ultimate parent.
 - **Subsidiaries** — did they acquire assembly or component companies?
 - **JV partners** — any joint ventures with foreign entities?
 
-Repeat Steps 1–4 against each subsidiary's product catalogs and part number formats.
+Repeat Steps 1–5 against each subsidiary's product catalogs and part number formats.
 
 **After mapping, screen every entity in the tree** (owners, subsidiaries, and the anchor entity) using the three-tier Entity Screening process described in the Corporate Hierarchy Schema section above. Populate the `highlight` field for every positive finding. This step is mandatory — no hierarchy entity should go unscreened.
 
-### Step 7 — Component Sourcing Investigation
+### Step 8 — Component Sourcing Investigation
 
 Even if the final assembly location is domestic, trace upstream:
 
@@ -281,19 +316,45 @@ Even if the final assembly location is domestic, trace upstream:
 - Are raw materials (e.g., nano-zirconia powder, specialty glass) sourced from entities in countries of concern?
 - Does the assembler advertise "custom labeling" — suggesting the part number may be buyer-assigned rather than manufacturer-assigned?
 
-### Step 8 — Confidence Tier Assignment
+### Step 9 — Confidence Tier Assignment
 
 Rate each scenario based on how many steps of indirection were required:
 
 | Tier | Meaning |
 |---|---|
 | **A — Confirmed** | Exact part number found in manufacturer's public catalog |
-| **B — High confidence** | Prefix match + description match + format fingerprint consistent |
+| **B — High confidence** | Prefix match + description match + format fingerprint consistent, or embedded OEM part number recovered via punctuation reinsertion |
 | **C — Probable** | Distributor identified, manufacturer inferred from subsidiary/catalog analysis |
 | **D — Speculative** | No prefix match; manufacturer inferred from product category + geographic analysis |
 | **E — Opaque** | Part number not publicly indexed anywhere; manufacturer cannot be determined without direct inquiry |
 
 When confidence is Tier C or below, generate multiple scenario diagrams showing alternate supply chain paths.
+
+### Manufacturer Provenance Diversity
+
+When the actual manufacturer behind a distributor-branded product is unknown, **do not default to a single assumed origin** (e.g., "Chinese ODM"). Instead, enumerate the full range of plausible manufacturers across geographies and business models, then generate a separate scenario for each materially different supply chain path.
+
+**Why this matters:** A 10G DWDM SFP+ transceiver could equally plausibly come from an anonymous Shenzhen white-label shop, a major Chinese branded manufacturer like Innolight, a Norwegian company like Smartoptics that offers verified non-Chinese COO options, or a U.S.-based firm like Lumentum or Coherent. Each path has radically different compliance implications. Presenting only the cheapest/most-common path as "the" scenario is misleading — it biases the compliance assessment toward worst-case without acknowledging that the distributor may have legitimate Western sourcing.
+
+**How to identify the plausible manufacturer set:**
+
+1. **Start from the product specification** — what class of manufacturer can produce this exact product? For a 10G DWDM SFP+ at 80km, the answer includes dozens of firms across China, Japan, the US, and Europe.
+2. **Consider the distributor's positioning** — a budget-focused reseller is more likely to source from low-cost ODMs; a distributor emphasizing quality, lifetime warranties, or TAA compliance may source from Western or major branded manufacturers.
+3. **Check for country-of-origin indicators** — some distributors offer COO documentation, TAA compliance statements, or BABA self-certification. These narrow the field.
+4. **Search for the distributor's known supplier relationships** — press releases, partnership announcements, certification pages, and trade show co-appearances can reveal sourcing partners.
+5. **Consider that sourcing may change over time** — a distributor may use different manufacturers for the same SKU depending on pricing, availability, and customer requirements.
+
+**Scenario generation guidance:**
+
+| # of scenarios | When |
+|---|---|
+| 1 scenario | Manufacturer is confirmed (Tier A/B) |
+| 2 scenarios | Two materially different paths: e.g., domestic assembly with imported subcomponents vs. fully imported |
+| 3+ scenarios | Manufacturer unknown and product category is served by manufacturers with different compliance profiles (e.g., anonymous Chinese ODM vs. Western manufacturer vs. major Chinese branded firm with screenable ownership) |
+
+Each scenario should represent a **materially different compliance outcome**, not just a different company name. If two candidate manufacturers would produce the same screening results (e.g., two privately-founded Chinese firms both clean on all tiers), they belong in the same scenario with both listed as candidates.
+
+**Physical inspection as a resolution path:** For active optical transceivers, the module's EEPROM contains vendor ID fields (bytes 20–35 of the SFF-8472 A0 page) that typically identify the actual manufacturer regardless of branding. Recommending physical inspection of the unit — reading the EEPROM with an SFP+ diagnostic tool — is a valid finding that can resolve manufacturer opacity without relying solely on public research.
 
 ### Opacity as a Finding
 
@@ -303,6 +364,12 @@ If a part number cannot be traced to a manufacturer through public sources, that
 - The format does not match any documented ordering schema
 - The prefix may be buyer-assigned or distributor-assigned
 - Manufacturer identity requires direct inquiry to the seller
+
+**Severity varies by product category:**
+- **Active equipment** (transceivers, switches, routers — anything with firmware): Manufacturer opacity is a high-severity finding because FCC Covered List screening cannot be completed. The inability to rule out Huawei/ZTE/HiSilicon components in the supply chain is a specific, documentable risk.
+- **Passive components** (cables, patch cords, CWDM filters, splitters): Manufacturer opacity is a lower-severity finding — the FCC Covered List does not apply to passive devices. However, state ownership and BIS Entity List screening still require manufacturer identification for BEAD/BABA purposes.
+
+When manufacturer identity is opaque, follow the Manufacturer Provenance Diversity guidance above to generate scenarios spanning the plausible range of origins rather than defaulting to a single assumption. For active equipment, recommend EEPROM inspection (SFF-8472/SFF-8636 vendor ID fields) as a resolution path.
 
 This is particularly relevant for BEAD/BABA compliance where domestic-origin documentation is required.
 
@@ -330,5 +397,8 @@ Output filenames always follow the pattern `PARTNUMBER-scenario-#.html`, using a
 - [ ] Positive screening findings are documented in the entity's `highlight` field using the standard text patterns
 - [ ] Owner entities include a `share` field where ownership percentage is publicly known
 - [ ] Part number confidence tier is documented in the subtitle or product specs
+- [ ] Product category (`active` or `passive`) is correctly set — this determines whether FCC Covered List screening applies
+- [ ] When manufacturer is unknown, multiple scenarios cover the plausible range of provenance (not just cheapest-path assumption) per Manufacturer Provenance Diversity guidance
+- [ ] For active equipment with opaque manufacturer, EEPROM vendor ID inspection is recommended as a resolution path
 - [ ] Output filename follows the convention `PARTNUMBER-scenario-#.html` (e.g., `FM0-PA1002CZBEZB001M-scenario-a.html`), even for single-scenario cases (use `-scenario-a`)
 - [ ] No JavaScript in the output HTML
