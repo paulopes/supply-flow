@@ -11,8 +11,7 @@ import { z } from "zod";
 // Resolve __dirname equivalent for ESM
 const __dirname = import.meta.dirname;
 
-// Locate the dist dir — works from both source (server.mjs) and build output
-const DIST_DIR = path.join(__dirname, "dist");
+// Locate the skill dir — works from both source (server.mjs) and build output
 const SKILL_PATH = path.join(__dirname, "skill", "supply-flow-SKILL.md");
 
 // Import the supply-flow generator (CJS module)
@@ -143,7 +142,7 @@ export function createServer() {
     { mimeType: RESOURCE_MIME_TYPE },
     async () => {
       const html = await fs.readFile(
-        path.join(DIST_DIR, "mcp-app.html"),
+        path.join(__dirname, "mcp-app.html"),
         "utf-8"
       );
       return {
