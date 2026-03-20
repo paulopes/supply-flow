@@ -35,12 +35,13 @@ If `-o` is omitted, the output filename is derived from the config filename. The
 
 ```json
 {
-  "title": "Diagram Title",
-  "subtitle": "Optional subtitle line",
+  "title": "Scenario title (rendered as small info line below the main header)",
+  "subtitle": "Scenario subtitle (appended to title on the info line)",
   "product": {
-    "name": "Product Name or Part Number",
+    "name": "Part Number",
+    "description": "Line-item description from the BOM or purchase order",
     "category": "passive | active | cable | module",
-    "specs": "Brief technical specs"
+    "specs": "Detailed technical specs shown in node popover"
   },
   "output": "html",
   "map": {
@@ -53,6 +54,8 @@ If `-o` is omitted, the output filename is derived from the config filename. The
   "corporateHierarchies": [ "..." ]
 }
 ```
+
+**Header rendering order:** The SVG header displays three lines: (1) `product.name` + " Supply Flow" as the bold title, (2) `product.description` as the subtitle if provided, (3) `title` and `subtitle` combined as a small scenario-info line. If no `product` is defined, `title` is used as the main title instead.
 
 ### Node Schema
 
@@ -102,6 +105,8 @@ Dashed flows conventionally indicate heritage/historical relationships or altern
 ### Corporate Hierarchy Schema
 
 Rendered as nested tree cards below the map on the page background (not inside the map's white box). Each entity has two optional tree directions: `owners` (upward chain toward ultimate parent/state) and `subsidiaries` (downward chain toward controlled entities).
+
+**Anchor entity rule:** Each entry in the `corporateHierarchies` array must be anchored at an entity that appears as a node on the map — typically a manufacturer, distributor, or assembler identified during the part number investigation. The anchor entity is the starting point: its `owners` array traces the ownership chain *upward* (parent company, ultimate parent, state affiliations), and its `subsidiaries` array traces controlled entities *downward*. Do not anchor at the top of the ownership chain with the map-node entity buried as a subsidiary — that inverts the perspective. For example, if the map shows Precision Optical Technologies as a distributor node, the hierarchy anchor should be Precision Optical Technologies with Belden Inc. in its `owners` array, not Belden Inc. as the anchor with Precision as a subsidiary.
 
 Both trees grow downward visually. The **Subsidiaries** tree uses left-side L-connectors; the **Owners** tree uses right-side mirrored connectors and is right-aligned. The trees are toggled via three CSS-only radio buttons per entity:
 
@@ -396,6 +401,7 @@ Output filenames always follow the pattern `PARTNUMBER-scenario-#.html`, using a
 - [ ] Flows connect in the correct direction (upstream → downstream)
 - [ ] Dashed flows are used for heritage/historical relationships, not active product flows
 - [ ] Corporate hierarchy uses `owners` (upward) and `subsidiaries` (downward), not `children`
+- [ ] **Each hierarchy anchor is a map-node entity** (manufacturer, distributor, assembler) — not a top-level parent with the map-node buried as a subsidiary
 - [ ] Corporate hierarchy `source` fields link to verifiable public sources (press releases, SEC filings, stock exchange profiles)
 - [ ] **Every hierarchy entity (owners and subsidiaries) has been screened** against: (1) state ownership, (2) FCC Covered List, (3) DoC/BIS Entity List
 - [ ] Positive screening findings are documented in the entity's `highlight` field using the standard text patterns

@@ -12,6 +12,10 @@ var DRC={manufacturer:'#2b6cb0',assembler:'#6b21a8',oem:'#b45309',distributor:'#
 var RLB={manufacturer:'Manufacturer',assembler:'Assembler',oem:'OEM / Integrator',distributor:'Distributor',operator:'Operator / Buyer',regulatory:'Regulatory'};
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function tw(s,f){return s.length*f*0.56;}
+function lighten(hex,f){hex=hex.replace('#','');if(hex.length===3)hex=hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+  var r=parseInt(hex.substring(0,2),16),g=parseInt(hex.substring(2,4),16),b=parseInt(hex.substring(4,6),16);
+  r=Math.round(r+(255-r)*f);g=Math.round(g+(255-g)*f);b=Math.round(b+(255-b)*f);
+  return'#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 
 // Projection: eqc lon_0=-90 onto 1400x700
 function lonToX(lon){var nl=lon>90?lon-360:lon;return(nl+270)/360*MW;}
@@ -170,8 +174,8 @@ function buildPop(node,rc,x,y,vb,nodeId){
 function css(){return '\n'+
 '.sf-water{fill:#edf2f7}\n.sf-land{fill:#d6d3cd;stroke:#b8b4ae;stroke-width:0.3;stroke-linejoin:round}\n'+
 '.sf-grid{stroke:#dde2e8;stroke-width:0.2;fill:none}\n'+
-'.sf-flow-path{fill:none;stroke-width:1.6;opacity:0.45;stroke-linecap:round}\n.sf-flow-head{opacity:0.45}\n'+
-'.sf-flow-group:hover .sf-flow-path,.sf-flow-group:hover .sf-flow-head{opacity:1;stroke-width:2.2}\n'+
+'.sf-flow-path{fill:none;stroke-width:1.6;stroke-linecap:round;transition:stroke 0.15s,stroke-width 0.15s}\n.sf-flow-head{transition:fill 0.15s}\n'+
+'.sf-flow-group:hover .sf-flow-path{stroke:var(--fc);stroke-width:2.2}\n.sf-flow-group:hover .sf-flow-head{fill:var(--fc)}\n'+
 '.sf-flow-label{opacity:0;transition:opacity 0.15s;pointer-events:none}\n.sf-flow-group:hover .sf-flow-label{opacity:1}\n'+
 '.sf-node{cursor:pointer;outline:none}\n.sf-node-circle{transition:all 0.15s}\n'+
 '.sf-node:hover .sf-node-circle{filter:brightness(1.12)}\n.sf-node:focus .sf-node-circle{stroke-width:2.5;filter:brightness(1.1)}\n'+
@@ -181,9 +185,6 @@ function css(){return '\n'+
 '.sf-covered:focus .sf-node-circle{stroke:#dc2626;stroke-width:2.5;stroke-dasharray:4 2.5}\n'+
 '.sf-covered-badge{font-size:8px;font-family:system-ui,sans-serif;font-weight:700;fill:#dc2626}\n'+
 '.sf-node-label{font-size:8.5px;font-family:system-ui,sans-serif;font-weight:600;pointer-events:none}\n'+
-'.sf-title{font-size:16px;font-weight:700;fill:#0f172a;font-family:system-ui,sans-serif}\n'+
-'.sf-subtitle{font-size:10px;fill:#64748b;font-family:system-ui,sans-serif}\n'+
-'.sf-product{font-size:9px;fill:#475569;font-family:system-ui,sans-serif}\n'+
 '.sf-hint{font-size:8px;fill:#94a3b8;font-family:system-ui,sans-serif;font-style:italic}\n'+
 '.sf-legend-label{font-size:8px;font-family:system-ui,sans-serif}\n'+
 '.sf-legend-title{font-size:9px;fill:#0f172a;font-weight:700;font-family:system-ui,sans-serif}\n';}
@@ -196,11 +197,8 @@ function buildSVG(cfg){
   var s='';
 
   // Header (positioned relative to viewBox)
+  // Header: hint only in SVG; title/subtitle rendered as HTML above the map
   var hx=vb.vx+8,hy=vb.vy+14;
-  s+='<text class="sf-title" x="'+hx+'" y="'+hy+'">'+esc(cfg.title||'')+'</text>';
-  if(cfg.subtitle)s+='<text class="sf-subtitle" x="'+hx+'" y="'+(hy+14)+'">'+esc(cfg.subtitle)+'</text>';
-  if(cfg.product){var pt=cfg.product.name+(cfg.product.specs?' \u2014 '+cfg.product.specs:'');
-    s+='<text class="sf-product" x="'+hx+'" y="'+(hy+(cfg.subtitle?27:14))+'">'+esc(pt)+'</text>';}
   s+='<text class="sf-hint" x="'+(vb.vx+vb.vw-8)+'" y="'+(hy)+'" text-anchor="end">Hover \u00B7 Click for details</text>';
 
   // SVG filter for popover shadow
@@ -220,9 +218,9 @@ function buildSVG(cfg){
 
   // Flows
   F.forEach(function(f){var fp=nP[f.from],tp=nP[f.to];if(!fp||!tp)return;
-    var col=f.color||'#64748b',dash=f.dashed?' stroke-dasharray="6 3"':'';
-    var pa=flowP(fp.x,fp.y,tp.x,tp.y),ah=arrH(fp.x,fp.y,pa.cx,pa.cy,tp.x,tp.y,7);
-    s+='<g class="sf-flow-group"><path d="'+pa.d+'" class="sf-flow-path" stroke="'+esc(col)+'"'+dash+'/><path d="'+ah+'" class="sf-flow-head" fill="'+esc(col)+'"/>';
+    var col=f.color||'#64748b',lcol=lighten(col,0.55),dash=f.dashed?' stroke-dasharray="6 3"':'';
+    var pa=flowP(fp.x,fp.y,tp.x,tp.y),ah=arrH(fp.x,fp.y,pa.cx,pa.cy,tp.x,tp.y,14);
+    s+='<g class="sf-flow-group" style="--fc:'+esc(col)+'"><path d="'+pa.d+'" class="sf-flow-path" stroke="'+esc(lcol)+'"'+dash+'/><path d="'+ah+'" class="sf-flow-head" fill="'+esc(lcol)+'"/>';
     if(f.label){var lw=tw(f.label,8)+10;
       s+='<g class="sf-flow-label"><rect x="'+(pa.cx-lw/2).toFixed(1)+'" y="'+(pa.cy-11).toFixed(1)+'" width="'+lw.toFixed(1)+'" height="14" rx="2" fill="#1e293b" opacity="0.9"/><text x="'+pa.cx.toFixed(1)+'" y="'+(pa.cy-1).toFixed(1)+'" text-anchor="middle" fill="#fff" font-size="8" font-family="system-ui,sans-serif">'+esc(f.label)+'</text></g>';}
     s+='</g>';});
@@ -473,6 +471,7 @@ function hierCss(){return '\n'+
 '.sf-hier-tree>.sf-hier-node:last-child::after{display:none}\n'+
 /* === Owner tree overrides: right-side mirrored connectors === */
 '.sf-hier-panel-own .sf-hier-tree{margin-left:0;margin-right:28px}\n'+
+'.sf-hier-panel-own .sf-hier-card{max-width:none}\n'+
 '.sf-hier-panel-own .sf-hier-node{padding-left:0;padding-right:18px}\n'+
 '.sf-hier-panel-own .sf-hier-node::before{left:auto;right:0;border-left:none;border-bottom-left-radius:0;border-right:2px solid #94a3b8;border-bottom-right-radius:6px}\n'+
 '.sf-hier-panel-own .sf-hier-node::after{left:auto;right:0;border-left:none;border-right:2px solid #94a3b8}\n'+
@@ -500,7 +499,8 @@ var CM={
 'sf-product':'_pd','sf-subtitle':'_st','sf-hier-notes':'_nn',
 'sf-water':'_wa','sf-title':'_ti','sf-radio':'_ra','sf-node':'_nd2',
 'sf-hint':'_hi','sf-land':'_la','sf-grid':'_gr','sf-wrap':'_wr',
-'sf-pop':'_pp','sf-tip':'_tp'
+'sf-pop':'_pp','sf-tip':'_tp',
+'sf-hdr':'_hd','sf-hdr-title':'_h1','sf-hdr-desc':'_h2','sf-hdr-scenario':'_h3'
 };
 // Build sorted keys longest-first, compile regex
 var CK=Object.keys(CM).sort(function(a,b){return b.length-a.length;});
@@ -519,7 +519,16 @@ function minify(html){
 function assembleHTML(cfg){
   var hier=buildHierarchies(cfg);
   var extraCss=hier?hierCss():'';
-  return minify('<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>'+esc(cfg.title||'Supply Chain Flow')+'</title><style>*,*::before,*::after{box-sizing:border-box}body{margin:0;padding:20px;background:#f8fafc;font-family:system-ui,-apple-system,sans-serif;display:flex;flex-direction:column;align-items:center}.sf-wrap{background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.08);max-width:1440px;width:100%;overflow:hidden}.sf-wrap svg{display:block;width:100%;height:auto}@media print{body{padding:0;background:#fff}.sf-wrap{box-shadow:none;border-radius:0}}'+extraCss+'</style></head><body><div class="sf-wrap">'+assembleSVG(cfg)+'</div>'+hier+'</body></html>');
+  // Build HTML header above the map
+  var hdr='';
+  var titleText=(cfg.product&&cfg.product.name?cfg.product.name+' Supply Flow':cfg.title||'Supply Flow');
+  hdr+='<div class="sf-hdr">';
+  hdr+='<div class="sf-hdr-title">'+esc(titleText)+'</div>';
+  if(cfg.product&&cfg.product.description)hdr+='<div class="sf-hdr-desc">'+esc(cfg.product.description)+'</div>';
+  if(cfg.subtitle)hdr+='<div class="sf-hdr-scenario">'+esc(cfg.subtitle)+'</div>';
+  hdr+='</div>';
+  var hdrCss='.sf-hdr{padding:16px 20px 12px;border-bottom:1px solid #e2e8f0}.sf-hdr-title{font-size:18px;font-weight:700;color:#0f172a;margin-bottom:2px}.sf-hdr-desc{font-size:13px;color:#475569;margin-bottom:2px}.sf-hdr-scenario{font-size:11px;color:#94a3b8}';
+  return minify('<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>'+esc(titleText)+'</title><style>*,*::before,*::after{box-sizing:border-box}body{margin:0;padding:20px;background:#f8fafc;font-family:system-ui,-apple-system,sans-serif;display:flex;flex-direction:column;align-items:center}.sf-wrap{background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.08);max-width:1440px;width:100%;overflow:hidden}.sf-wrap svg{display:block;width:100%;height:auto}@media print{body{padding:0;background:#fff}.sf-wrap{box-shadow:none;border-radius:0}}'+hdrCss+extraCss+'</style></head><body><div class="sf-wrap">'+hdr+assembleSVG(cfg)+'</div>'+hier+'</body></html>');
 }
 
 /**
