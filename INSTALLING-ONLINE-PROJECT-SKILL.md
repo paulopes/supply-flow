@@ -24,7 +24,7 @@ This skill consists of two files:
 1. Open the Claude.ai project page with the chats where you want to be able to use this skill
 2. Upload both `supply-flow-SKILL.md` and `supply-flow.js` to the project's sidebar where the project's reference files are listed (if you drag-drop the files you'll see that as you drop the files the landing area is called **Project Knowledge**)
 
-That's it. Claude will recognize CFR/supply flow diagram requests automatically and follow the skill spec. At the start of each conversation that uses the skill, Claude copies `supply-flow.js` from the uploads into its working environment and runs it with Node.js.
+That's it. Claude will recognize supply flow diagram requests automatically and follow the skill spec. At the start of each conversation that uses the skill, Claude copies `supply-flow.js` from the uploads into its working environment and runs it with Node.js.
 
 Alternatively, while in a Claude.ai chat, tell it that you want to use the skill that is in the files `supply-flow-SKILL.md` and `supply-flow.js`, which you will have directly uploaded to the chat. However, this alternate method only makes the skill available to that chat.
 

@@ -1,6 +1,6 @@
 # supply-flow — MCP App Installation Guide
 
-An MCP server that exposes supply-flow as a tool with an interactive UI. When called from any MCP-compatible client (Claude Code, Claude Desktop, VS Code, Cursor, Windsurf, and others), the generated supply flow diagram renders **inline in the conversation** — clickable nodes, CFR tooltips, acronym expansions, and all.
+An MCP server that exposes supply-flow as a tool with an interactive UI. When called from any MCP-compatible client (Claude Code, Claude Desktop, VS Code, Cursor, Windsurf, and others).
 
 ## What It Does
 
@@ -174,14 +174,14 @@ You should see `generate-supply-flow-diagram` in the list. If you also have the 
 
 Ask Claude to create a supply flow diagram. For example:
 
-> "Create a lifecycle diagram for the E-Rate program under 47 CFR Part 54 Subpart F."
+> "Create a supply flow diagram for part number 123456789 described as a CPE with 4 Gigabit Ethernet ports."
 
 Claude will:
 
-1. Research the relevant CFR sections
-2. Build the JSON config following the supply-flow schema
-3. Call the `generate-supply-flow-diagram` MCP tool with the config
-4. The diagram renders inline — click any node to see the CFR text
+1. Research the relevant online information of the part number  (preferably helped by the description you can optionally provide to narrow down the possible suppliers)
+2. Create a `.json` config with all the resulting information
+3. Run `supply-flow.js` to generate the HTML
+4. Return the interactive HTML file
 
 You can also provide a config object directly:
 
@@ -242,6 +242,6 @@ This runs both `vite build --watch` (rebuilds the view on changes) and the MCP s
 
 ### VS Code MCP tool output size
 
-VS Code imposes a hard byte limit on MCP tool output that **cannot be configured** by the user. Complex diagrams with many CFR sections and lengthy quoted text may be truncated. The library API automatically minifies the HTML output to reduce byte count, but very large diagrams may still exceed the limit. If you encounter truncation in VS Code, consider reducing the number of `defined` entries or shortening the quoted text.
+VS Code imposes a hard byte limit on MCP tool output that **cannot be configured** by the user. The library API automatically minifies the HTML output to reduce byte count, but very large diagrams may still exceed the limit. If you encounter truncation in VS Code, consider reducing the number of `defined` entries or shortening the quoted text.
 
 Claude Code has a similar limit (`MAX_MCP_OUTPUT_TOKENS`, default 25 000 tokens) but it **can** be increased — the automated installer sets it to 75 000 in `~/.claude/settings.json`.
