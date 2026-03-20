@@ -528,21 +528,23 @@ function assembleHTML(cfg){
  * @param {object} cfg        — The diagram config (same schema as the JSON file).
  * @param {string} [cfgDir]   — Directory for resolving relative paths.
  *                              Defaults to process.cwd().
- * @returns {string}          — Self-contained HTML document.
+ * @returns {string}          — Self-contained HTML or SVG document.
  */
 function generateDiagram(cfg, cfgDir) {
-  var args=process.argv.slice(2);
-  if(args.length<1){console.error('Usage: node supply-flow.js <config.json> [-o output]');process.exit(1);}
-  var cfgPath=args[0],outPath=null;
-  for(var i=1;i<args.length;i++){if(args[i]==='-o'&&args[i+1])outPath=args[++i];}
-  var cfg=JSON.parse(fs.readFileSync(cfgPath,'utf8'));var mode=cfg.output||'html';
-  if(!outPath)outPath=path.basename(cfgPath,path.extname(cfgPath))+(mode==='svg'?'.svg':'.html');
-  fs.writeFileSync(outPath,mode==='svg'?'<?xml version="1.0" encoding="UTF-8"?>\n'+assembleSVG(cfg):assembleHTML(cfg),'utf8');
-  var vb=computeViewBox(cfg);
-  console.log('\u2713 Generated: '+outPath);
-  console.log('  Nodes: '+(cfg.nodes||[]).length+'  Flows: '+(cfg.flows||[]).length);
-  console.log('  ViewBox: '+vb.vx+' '+vb.vy+' '+vb.vw+' '+vb.vh);
-  console.log('  Land path: '+(LAND_PATH.length/1024).toFixed(0)+' KB');
+  var args = process.argv.slice(2);
+  if (args.length < 1) { console.error('Usage: node supply-flow.js <config.json> [-o output]'); process.exit(1); }
+  var cfgPath = cfgDir ? cfgDir : args[0]
+  var outPath = null;
+  for (var i = 1; i < args.length; i++) { if (args[i] === '-o' && args[i + 1]) outPath = args[++i]; }
+  var cfg = cfg ? cfg : JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+  var mode = cfg.output || 'html';
+  if (!outPath) outPath = path.basename(cfgPath, path.extname(cfgPath)) + (mode === 'svg' ? '.svg' : '.html');
+  fs.writeFileSync(outPath, mode === 'svg' ? '<?xml version="1.0" encoding="UTF-8"?>\n' + assembleSVG(cfg) : assembleHTML(cfg), 'utf8');
+  var vb = computeViewBox(cfg);
+  console.log('\u2713 Generated: ' + outPath);
+  console.log('  Nodes: ' + (cfg.nodes || []).length + '  Flows: ' + (cfg.flows || []).length);
+  console.log('  ViewBox: ' + vb.vx + ' ' + vb.vy + ' ' + vb.vw + ' ' + vb.vh);
+  console.log('  Land path: ' + (LAND_PATH.length / 1024).toFixed(0) + ' KB');
 }
 
 // ── CLI ──────────────────────────────────────────────────────────────────────
