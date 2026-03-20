@@ -59,7 +59,7 @@ npm install
 npm run build
 ```
 
-The build step bundles the MCP App view into `dist/mcp-app.html`.
+The build step bundles the MCP App view into `mcp-app.html`.
 
 ### 2. Register the MCP server
 

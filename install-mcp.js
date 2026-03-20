@@ -170,11 +170,11 @@ function checkPrerequisites() {
   }
   ok("node_modules present");
 
-  const dist = path.join(ROOT, "dist", "mcp-app.html");
+  const dist = path.join(ROOT, "mcp-app.html");
   if (!fs.existsSync(dist)) {
-    fail("dist/mcp-app.html not found. Run 'npm run build' first.");
+    fail("mcp-app.html not found. Run 'npm run build' first.");
   }
-  ok("dist/mcp-app.html present");
+  ok("mcp-app.html present");
 }
 
 // ── Register MCP server ─────────────────────────────────────────────────────
