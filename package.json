@@ -7,8 +7,8 @@
     "mcp-supply-flow": "./install-mcp.js"
   },
   "scripts": {
-    "build": "cross-env INPUT=mcp-app.html vite build",
-    "start": "concurrently --raw \"cross-env NODE_ENV=development INPUT=mcp-app.html vite build --watch\" \"node --watch main.mjs\"",
+    "build": "cross-env INPUT=dist/mcp-app.html vite build",
+    "start": "concurrently --raw \"cross-env NODE_ENV=development INPUT=dist/mcp-app.html vite build --watch\" \"node --watch main.mjs\"",
     "start:stdio": "node main.mjs --stdio",
     "install-mcp": "node install-mcp.js",
     "install-mcp:claude-code": "node install-mcp.js --client=claude-code",

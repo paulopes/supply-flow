@@ -84,7 +84,7 @@ Add the server entry to your client's MCP configuration file:
   "mcpServers": {
     "supply-flow": {
       "command": "node",
-      "args": ["/absolute/path/to/supply-flow/main.mjs", "--stdio"]
+      "args": ["/absolute/path/to/supply-flow/supply-flow-mcp.js", "--stdio"]
     }
   }
 }
@@ -96,7 +96,7 @@ Add the server entry to your client's MCP configuration file:
   "gemini.codeAssist.mcpServers": {
     "supply-flow": {
       "command": "node",
-      "args": ["/absolute/path/to/supply-flow/main.mjs", "--stdio"]
+      "args": ["/absolute/path/to/supply-flow/supply-flow-mcp.js", "--stdio"]
     }
   }
 }
@@ -108,7 +108,7 @@ Add the server entry to your client's MCP configuration file:
   "servers": {
     "supply-flow": {
       "command": "node",
-      "args": ["/absolute/path/to/supply-flow/main.mjs", "--stdio"]
+      "args": ["/absolute/path/to/supply-flow/supply-flow-mcp.js", "--stdio"]
     }
   }
 }
@@ -122,7 +122,7 @@ Replace `/absolute/path/to/supply-flow` with the actual path where you cloned th
   "mcpServers": {
     "supply-flow": {
       "command": "node",
-      "args": ["C:\\Users\\you\\supply-flow\\main.mjs", "--stdio"]
+      "args": ["C:\\Users\\you\\supply-flow\\supply-flow-mcp.js", "--stdio"]
     }
   }
 }
@@ -137,11 +137,11 @@ extensions:
   supply-flow:
     command: node
     args:
-      - /absolute/path/to/supply-flow/main.mjs
+      - /absolute/path/to/supply-flow/supply-flow-mcp.js
       - --stdio
 ```
 
-The key information is always the same — `node` as the command, and the absolute path to `main.mjs` with `--stdio` as arguments. Consult your client's documentation for the exact config file location and format.
+The key information is always the same — `node` as the command, and the absolute path to `supply-flow-mcp.js` with `--stdio` as arguments. Consult your client's documentation for the exact config file location and format.
 
 ### 3. Enable the server (Claude Code only)
 

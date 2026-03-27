@@ -142,7 +142,7 @@ export function createServer() {
     { mimeType: RESOURCE_MIME_TYPE },
     async () => {
       const html = await fs.readFile(
-        path.join(__dirname, "mcp-app.html"),
+        path.join(__dirname, "dist", "mcp-app.html"),
         "utf-8"
       );
       return {

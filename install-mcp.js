@@ -23,8 +23,8 @@ const path = require("path");
 const os = require("os");
 
 const ROOT = __dirname;
-const MAIN_MJS = path.join(ROOT, "main.mjs");
-const SERVER_PATH = MAIN_MJS;
+const MCP_SERVER = path.join(ROOT, "supply-flow-mcp.js");
+const SERVER_PATH = MCP_SERVER;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -170,18 +170,20 @@ function checkPrerequisites() {
   }
   ok("node_modules present");
 
-  const dist = path.join(ROOT, "mcp-app.html");
+  // mcp-app.html is optional — only needed if using HTTP mode (not stdio)
+  const dist = path.join(ROOT, "dist", "mcp-app.html");
   if (!fs.existsSync(dist)) {
-    fail("mcp-app.html not found. Run 'npm run build' first.");
+    warn("mcp-app.html not found. Only required for HTTP mode (not stdio).");
+  } else {
+    ok("mcp-app.html present");
   }
-  ok("mcp-app.html present");
 }
 
 // ── Register MCP server ─────────────────────────────────────────────────────
 
 function registerServer(profile) {
   const cfgPath = profile.configPath();
-  const key = profile.serversKey;
+  const keyPath = profile.serversKey;
 
   const entry = {
     command: "node",
@@ -200,10 +202,19 @@ function registerServer(profile) {
     }
   }
 
-  if (!existing[key]) existing[key] = {};
+  // Handle nested keys (e.g. "gemini.codeAssist.mcpServers")
+  const keys = keyPath.split(".");
+  let current = existing;
+  for (let i = 0; i < keys.length - 1; i++) {
+    if (!current[keys[i]]) current[keys[i]] = {};
+    current = current[keys[i]];
+  }
+  const finalKey = keys[keys.length - 1];
 
-  if (existing[key]["supply-flow"]) {
-    const cur = existing[key]["supply-flow"];
+  if (!current[finalKey]) current[finalKey] = {};
+
+  if (current[finalKey]["supply-flow"]) {
+    const cur = current[finalKey]["supply-flow"];
     if (cur.command === entry.command &&
       JSON.stringify(cur.args) === JSON.stringify(entry.args)) {
       ok("Config already has supply-flow registered — no changes needed");
@@ -212,7 +223,7 @@ function registerServer(profile) {
     warn("Config has a different supply-flow entry — updating");
   }
 
-  existing[key]["supply-flow"] = entry;
+  current[finalKey]["supply-flow"] = entry;
   fs.writeFileSync(cfgPath, JSON.stringify(existing, null, 2) + "\n", "utf-8");
   ok(`MCP config written → ${cfgPath}`);
 }
@@ -311,13 +322,21 @@ try {
   }
 
   console.log(`\n\x1b[32mDone!\x1b[0m supply-flow is ready to use with ${profile.label}.\n`);
-  console.log("  Stdio mode:  node " + SERVER_PATH + " --stdio");
-  console.log("  HTTP mode:   node " + SERVER_PATH + "  (port 3001)");
-  console.log("\n  The 'generate-supply-flow-diagram' tool is now available.");
+  console.log("  Server:     node " + SERVER_PATH);
+  console.log("  Protocol:   MCP stdio (JSON-RPC 2.0)");
+  console.log("\n  21 tools are now available:");
+  console.log("  • Research tools (init, log, screen, advance phase, etc.)");
+  console.log("  • Domain tracking (extract, resolve domains)");
+  console.log("  • Diagram generation (generate_diagram)");
+  console.log("\n  Workflow: 4 phases enforced by phase gates");
+  console.log("  Phase 1: Distributor identification");
+  console.log("  Phase 2: Supply chain tracing");
+  console.log("  Phase 3: Entity screening (state ownership, FCC, BIS)");
+  console.log("  Phase 4: Scenario generation & diagram output");
   if (clientName === "claude-code") {
-    console.log("  \x1b[33mIMPORTANT:\x1b[0m Fully quit Claude Code (don't just close the window) and relaunch it.");
+    console.log("\n  \x1b[33mIMPORTANT:\x1b[0m Fully quit Claude Code (don't just close the window) and relaunch it.");
   }
-  console.log("  Ask your AI assistant: \"What tools do you have?\" to verify.\n");
+  console.log("\n  Ask your AI assistant: \"What tools do you have?\" to verify.\n");
 } catch (e) {
   fail(e.message);
 }

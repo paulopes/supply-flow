@@ -86,22 +86,18 @@ npm run build
 
 ### Running
 
-**HTTP transport** (standalone server):
-```bash
-node main.mjs
-```
-The server listens on `http://localhost:3001/mcp` using Streamable HTTP. Set the `PORT` environment variable to change the port.
-
 **stdio transport** (for native MCP clients):
 ```bash
-node main.mjs --stdio
+node supply-flow-mcp.js --stdio
 ```
+
+For HTTP transport or other server variants, see `main.mjs` or `server.mjs`.
 
 ### Connecting from web apps on the same machine
 
 When the server is running in HTTP mode, any web application on the same machine can connect to it at `http://localhost:3001/mcp` using the Streamable HTTP transport. CORS is enabled, so browser-based apps can call the `generate-supply-flow-diagram` tool directly.
 
-> **Note:** Cloud-hosted AI clients (e.g. Claude.ai, ChatGPT) make MCP connections from their own servers, not from your browser — so `localhost` won't work for those. You would need to expose the server via a tunnel (e.g. ngrok) or deploy it to a public host. In that case, consider adding authentication before exposing the server to the internet.
+> **Note:** For native MCP clients like Claude Code and Claude Desktop, use the automated installer (`npm run install-mcp`) which handles stdio transport configuration automatically.
 
 ### Installing in native MCP clients
 
